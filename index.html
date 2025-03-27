@@ -1,0 +1,388 @@
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>GoodCoin Sale</title>  
+    <script src="https://cdn.jsdelivr.net/npm/web3/dist/web3.min.js"></script>  
+    <style>  
+        body {  
+            font-family: Arial, sans-serif;  
+            background-color: #f4f4f4;  
+            padding: 20px;  
+            border-radius: 5px;  
+        }  
+        h1 {  
+            text-align: center;  
+        }  
+        .container {  
+            max-width: 600px;  
+            margin: 0 auto;  
+            background: white;  
+            padding: 20px;  
+            border-radius: 8px;  
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);  
+        }  
+        input[type="number"] {  
+            width: 100%;  
+            padding: 10px;  
+            margin: 10px 0;  
+        }  
+        button {  
+            padding: 10px 20px;  
+            color: white;  
+            background-color: #007bff;  
+            border: none;  
+            cursor: pointer;  
+            border-radius: 5px;  
+        }  
+        button:hover {  
+            background-color: #0056b3;  
+        }  
+        .balance-info {  
+            margin-top: 20px;  
+        }  
+    </style>  
+</head>  
+<body>  
+    <div class="container">  
+        <h1>GoodCoin Sale</h1>  
+        <label for="amount">Purchase Amount (GoodCoins):</label>  
+        <input type="number" id="amount" min="1" max="100000" required>  
+
+        <button id="purchaseButton">Purchase GoodCoins</button>  
+        
+        <div class="balance-info">  
+            <h2>Your Balances</h2>  
+            <p id="usdcBalance"></p>  
+            <p id="goodCoinBalance"></p>  
+        </div>  
+    </div>  
+
+    <script>  
+        const contractAddress = '0x58f8E300D1AEf000f0735e2DB002e6241983Dc7f'; // GoodCoinSale contract address  
+        const usdcAddress = '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'; // USDC contract address  
+        const goodCoinAddress = '0x6CFa2D0881561174b8450a1128d3669EB68ce93F'; // GoodCoin contract address  
+        const contractABI = [  
+            {  
+                "inputs": [  
+                    {  
+                        "internalType": "uint256",  
+                        "name": "goodCoinAmount",  
+                        "type": "uint256"  
+                    }  
+                ],  
+                "name": "buy",  
+                "outputs": [],  
+                "stateMutability": "nonpayable",  
+                "type": "function"  
+            },  
+            {  
+                "inputs": [  
+                    {  
+                        "internalType": "address",  
+                        "name": "_usdc",  
+                        "type": "address"  
+                    },  
+                    {  
+                        "internalType": "address",  
+                        "name": "_goodCoin",  
+                        "type": "address"  
+                    }  
+                ],  
+                "stateMutability": "nonpayable",  
+                "type": "constructor"  
+            },  
+            {  
+                "inputs": [  
+                    {  
+                        "internalType": "address",  
+                        "name": "owner",  
+                        "type": "address"  
+                    }  
+                ],  
+                "name": "OwnableInvalidOwner",  
+                "type": "error"  
+            },  
+            {  
+                "inputs": [  
+                    {  
+                        "internalType": "address",  
+                        "name": "account",  
+                        "type": "address"  
+                    }  
+                ],  
+                "name": "OwnableUnauthorizedAccount",  
+                "type": "error"  
+            },  
+            {  
+                "anonymous": false,  
+                "inputs": [  
+                    {  
+                        "indexed": true,  
+                        "internalType": "address",  
+                        "name": "previousOwner",  
+                        "type": "address"  
+                    },  
+                    {  
+                        "indexed": true,  
+                        "internalType": "address",  
+                        "name": "newOwner",  
+                        "type": "address"  
+                    }  
+                ],  
+                "name": "OwnershipTransferred",  
+                "type": "event"  
+            },  
+            {  
+                "anonymous": false,  
+                "inputs": [  
+                    {  
+                        "indexed": true,  
+                        "internalType": "address",  
+                        "name": "owner",  
+                        "type": "address"  
+                    },  
+                    {  
+                        "indexed": false,  
+                        "internalType": "uint256",  
+                        "name": "amount",  
+                        "type": "uint256"  
+                    }  
+                ],  
+                "name": "PolygonUSDCWithdrawal",  
+                "type": "event"  
+            },  
+            {  
+                "anonymous": false,  
+                "inputs": [  
+                    {  
+                        "indexed": true,  
+                        "internalType": "address",  
+                        "name": "buyer",  
+                        "type": "address"  
+                    },  
+                    {  
+                        "indexed": false,  
+                        "internalType": "uint256",  
+                        "name": "usdcAmount",  
+                        "type": "uint256"  
+                    },  
+                    {  
+                        "indexed": false,  
+                        "internalType": "uint256",  
+                        "name": "goodCoinAmount",  
+                        "type": "uint256"  
+                    }  
+                ],  
+                "name": "Purchase",  
+                "type": "event"  
+            },  
+            {  
+                "inputs": [],  
+                "name": "renounceOwnership",  
+                "outputs": [],  
+                "stateMutability": "nonpayable",  
+                "type": "function"  
+            },  
+            {  
+                "anonymous": false,  
+                "inputs": [  
+                    {  
+                        "indexed": true,  
+                        "internalType": "address",  
+                        "name": "owner",  
+                        "type": "address"  
+                    },  
+                    {  
+                        "indexed": false,  
+                        "internalType": "uint256",  
+                        "name": "amount",  
+                        "type": "uint256"  
+                    }  
+                ],  
+                "name": "TokenWithdrawal",  
+                "type": "event"  
+            },  
+            {  
+                "inputs": [  
+                    {  
+                        "internalType": "address",  
+                        "name": "newOwner",  
+                        "type": "address"  
+                    }  
+                ],  
+                "name": "transferOwnership",  
+                "outputs": [],  
+                "stateMutability": "nonpayable",  
+                "type": "function"  
+            },  
+            {  
+                "anonymous": false,  
+                "inputs": [  
+                    {  
+                        "indexed": true,  
+                        "internalType": "address",  
+                        "name": "owner",  
+                        "type": "address"  
+                    },  
+                    {  
+                        "indexed": false,  
+                        "internalType": "uint256",  
+                        "name": "amount",  
+                        "type": "uint256"  
+                    }  
+                ],  
+                "name": "Withdrawal",  
+                "type": "event"  
+            },  
+            {  
+                "inputs": [  
+                    {  
+                        "internalType": "uint256",  
+                        "name": "amount",  
+                        "type": "uint256"  
+                    }  
+                ],  
+                "name": "withdrawGoodCoin",  
+                "outputs": [],  
+                "stateMutability": "nonpayable",  
+                "type": "function"  
+            },  
+            {  
+                "inputs": [  
+                    {  
+                        "internalType": "uint256",  
+                        "name": "amount",  
+                        "type": "uint256"  
+                    }  
+                ],  
+                "name": "withdrawUSDC",  
+                "outputs": [],  
+                "stateMutability": "nonpayable",  
+                "type": "function"  
+            },  
+            {  
+                "inputs": [  
+                    {  
+                        "internalType": "address",  
+                        "name": "account",  
+                        "type": "address"  
+                    }  
+                ],  
+                "name": "getBalances",  
+                "outputs": [  
+                    {  
+                        "internalType": "uint256",  
+                        "name": "contractUSDC",  
+                        "type": "uint256"  
+                    },  
+                    {  
+                        "internalType": "uint256",  
+                        "name": "contractGoodCoin",  
+                        "type": "uint256"  
+                    },  
+                    {  
+                        "internalType": "uint256",  
+                        "name": "userUSDC",  
+                        "type": "uint256"  
+                    },  
+                    {  
+                        "internalType": "uint256",  
+                        "name": "userGoodCoin",  
+                        "type": "uint256"  
+                    }  
+                ],  
+                "stateMutability": "view",  
+                "type": "function"  
+            },  
+            {  
+                "inputs": [],  
+                "name": "goodCoin",  
+                "outputs": [  
+                    {  
+                        "internalType": "contract IERC20",  
+                        "name": "",  
+                        "type": "address"  
+                    }  
+                ],  
+                "stateMutability": "view",  
+                "type": "function"  
+            },  
+            {  
+                "inputs": [],  
+                "name": "owner",  
+                "outputs": [  
+                    {  
+                        "internalType": "address",  
+                        "name": "",  
+                        "type": "address"  
+                    }  
+                ],  
+                "stateMutability": "view",  
+                "type": "function"  
+            },  
+            {  
+                "inputs": [],  
+                "name": "RATE",  
+                "outputs": [  
+                    {  
+                        "internalType": "uint256",  
+                        "name": "",  
+                        "type": "uint256"  
+                    }  
+                ],  
+                "stateMutability": "view",  
+                "type": "function"  
+            },  
+            {  
+                "inputs": [],  
+                "name": "usdc",  
+                "outputs": [  
+                    {  
+                        "internalType": "contract IERC20",  
+                        "name": "",  
+                        "type": "address"  
+                    }  
+                ],  
+                "stateMutability": "view",  
+                "type": "function"  
+            }  
+        ];  
+
+        const web3 = new Web3(Web3.givenProvider);  
+        const contract = new web3.eth.Contract(contractABI, contractAddress);  
+
+        async function getBalances() {  
+            const accounts = await web3.eth.getAccounts();  
+            const balances = await contract.methods.getBalances(accounts[0]).call();  
+            document.getElementById('usdcBalance').innerText = `USDC Balance: ${web3.utils.fromWei(balances[2])}`;  
+            document.getElementById('goodCoinBalance').innerText = `GoodCoin Balance: ${web3.utils.fromWei(balances[3])}`;  
+        }  
+
+        document.getElementById('purchaseButton').onclick = async () => {  
+            const amount = document.getElementById('amount').value;  
+            if (!amount || amount <= 0 || amount > 100000) {  
+                alert('Please enter a valid amount between 1 and 100,000.');  
+                return;  
+            }  
+
+            const accounts = await web3.eth.getAccounts();  
+            const goodCoinAmount = web3.utils.toWei(amount.toString(), 'ether'); // Convert to Wei  
+            
+            try {  
+                await contract.methods.buy(goodCoinAmount).send({ from: accounts[0] });  
+                alert('Purchase successful!');  
+                getBalances(); // Refresh balances  
+            } catch (error) {  
+                console.error(error);  
+                alert('Purchase failed: ' + error.message);  
+            }  
+        };  
+
+        window.onload = () => {  
+            getBalances(); // Load balances on page load  
+        };  
+    </script>  
+</body>  
+</html>
