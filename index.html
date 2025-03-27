@@ -67,23 +67,38 @@
 
         // Connect Wallet function  
         async function connectWallet() {  
-            // Enable session (triggers connection to wallet)  
-            await provider.enable();  
+            try {  
+                // Enable session (triggers connection to wallet)  
+                await provider.enable();  
 
-            // Create Web3 instance  
-            web3 = new Web3(provider);  
-            const accounts = await web3.eth.getAccounts();  
-            currentAccount = accounts[0];  
-            document.getElementById('connectedAddress').innerText = `Connected Wallet: ${currentAccount}`;  
-            getBalances();  
+                // Create Web3 instance  
+                web3 = new Web3(provider);  
+                const accounts = await web3.eth.getAccounts();  
+
+                if (accounts.length > 0) {  
+                    currentAccount = accounts[0];  
+                    document.getElementById('connectedAddress').innerText = `Connected Wallet: ${currentAccount}`;  
+                    getBalances(); // Fetch and display user balances  
+                } else {  
+                    alert("No accounts found. Please ensure your wallet is connected properly.");  
+                }  
+            } catch (error) {  
+                console.error("Connection error:", error);  
+                alert("Failed to connect to the wallet. Please try again.");  
+            }  
         }  
 
         // Get Balances  
         async function getBalances() {  
             const contract = new web3.eth.Contract(contractABI, contractAddress);  
-            const balances = await contract.methods.getBalances(currentAccount).call();  
-            document.getElementById('usdcBalance').innerText = `USDC Balance: ${web3.utils.fromWei(balances[2])}`;  
-            document.getElementById('goodCoinBalance').innerText = `GoodCoin Balance: ${web3.utils.fromWei(balances[3])}`;  
+            try {  
+                const balances = await contract.methods.getBalances(currentAccount).call();  
+                document.getElementById('usdcBalance').innerText = `USDC Balance: ${web3.utils.fromWei(balances[2])}`;  
+                document.getElementById('goodCoinBalance').innerText = `GoodCoin Balance: ${web3.utils.fromWei(balances[3])}`;  
+            } catch (error) {  
+                console.error("Error fetching balances:", error);  
+                alert("Failed to fetch balances. Please check if your wallet is connected.");  
+            }  
         }  
 
         // Purchase GoodCoins  
@@ -102,7 +117,7 @@
                 alert('Purchase successful!');  
                 getBalances(); // Refresh balances after purchase  
             } catch (error) {  
-                console.error(error);  
+                console.error("Purchase error:", error);  
                 alert('Purchase failed: ' + error.message);  
             }  
         };  
