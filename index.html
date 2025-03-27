@@ -21,9 +21,9 @@
     <script>  
         let web3;  
         let currentAccount;  
-        const contractAddress = "0x58f8E300D1AEf000f0735e2DB002e6241983Dc7f"; // GoodCoinSale contract address  
-        const usdcAddress = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"; // USDC contract address  
-        const goodCoinAddress = "0x6CFa2D0881561174b8450a1128d3669EB68ce93F"; // GoodCoin contract address  
+        const contractAddress = "0x58f8E300D1AEf000f0735e2DB002e6241983Dc7f";  
+        const usdcAddress = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359";  
+        const goodCoinAddress = "0x6CFa2D0881561174b8450a1128d3669EB68ce93F";  
 
         const contractABI = [  
             {  
@@ -59,26 +59,19 @@
             }  
         ];  
 
-        // Create WalletConnect Provider  
         const provider = new WalletConnectProvider.default({  
-            infuraId: "YOUR_INFURA_PROJECT_ID", // Replace with your Infura Project ID  
-            qrcode: false, // Disable QR code  
+            infuraId: "YOUR_INFURA_PROJECT_ID",  
         });  
 
-        // Connect Wallet function  
         async function connectWallet() {  
             try {  
-                // Enable session (triggers connection to wallet)  
                 await provider.enable();  
-
-                // Create Web3 instance  
                 web3 = new Web3(provider);  
                 const accounts = await web3.eth.getAccounts();  
-
                 if (accounts.length > 0) {  
                     currentAccount = accounts[0];  
                     document.getElementById('connectedAddress').innerText = `Connected Wallet: ${currentAccount}`;  
-                    getBalances(); // Fetch and display user balances  
+                    getBalances();  
                 } else {  
                     alert("No accounts found. Please ensure your wallet is connected properly.");  
                 }  
@@ -88,7 +81,6 @@
             }  
         }  
 
-        // Get Balances  
         async function getBalances() {  
             const contract = new web3.eth.Contract(contractABI, contractAddress);  
             try {  
@@ -101,7 +93,6 @@
             }  
         }  
 
-        // Purchase GoodCoins  
         document.getElementById('purchaseButton').onclick = async () => {  
             const amount = document.getElementById('amount').value;  
             if (!amount || amount <= 0 || amount > 100000) {  
@@ -109,21 +100,21 @@
                 return;  
             }  
 
-            const goodCoinAmount = web3.utils.toWei(amount.toString(), 'ether'); // Convert to Wei  
+            const goodCoinAmount = web3.utils.toWei(amount.toString(), 'ether');  
             const contract = new web3.eth.Contract(contractABI, contractAddress);  
 
             try {  
                 await contract.methods.buy(goodCoinAmount).send({ from: currentAccount });  
                 alert('Purchase successful!');  
-                getBalances(); // Refresh balances after purchase  
+                getBalances();  
             } catch (error) {  
                 console.error("Purchase error:", error);  
                 alert('Purchase failed: ' + error.message);  
             }  
         };  
 
-        // Event listener for connecting wallet  
         document.getElementById('connectWallet').onclick = connectWallet;  
     </script>  
 </body>  
 </html>
+
